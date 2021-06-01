@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="css/font.css">
+    <link rel="stylesheet" href="css/xadmin.css">
+    <script src="js/jquery.min.js"></script>
+    <script src="lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/xadmin.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <style>
+        form {
+            padding-top: 1%;
+        }
+    </style>
+</head>
+<body>
+<div class="x-nav">
+		<span class="layui-breadcrumb">
+			<a><cite>搜索</cite></a>
+		</span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新"><i class="layui-icon"
+                                                                        style="line-height:30px">ဂ</i></a>
+</div>
+<script id="optionTpl" type="text/html">
+    {{# layui.each(d.data, function(index, item){ }}
+    <option value="{{ item.pk }}">{{ item.value }}</option>
+    {{# }); }}
+</script>
+
+<form class="layui-form" action="" form-filter="layform">
+    <div style="float: left" class="layui-inline">
+        <label class="layui-form-label">搜索选项：</label>
+        <div class="layui-input-inline">
+            <select id="selectview" lay-verify="required" lay-search="">
+            </select>
+
+        </div>
+        <button type="submit" class="layui-btn" lay-submit="" lay-filter="demo1">搜索</button>
+    </div>
+</form>
+
+
+<script id="layCardTpl" type="text/html">
+    <div class="layui-card-header">{{ d.data.title }} >>>人数：{{ d.data.total_people }}亿  占比：{{ d.data.proportion }}%</div>
+    <div class="layui-card-body">
+        {{ d.data.synopsis }}
+    </div>
+</script>
+<div id="layCarView" style="margin-top: 4%" class="layui-card">
+
+</div>
+
+<script>
+    layui.use(['form', 'layedit', 'laydate', 'laytpl'], function () {
+        var form = layui.form
+            , layer = layui.layer
+            , layedit = layui.layedit
+            , laydate = layui.laydate,
+            laytpl = layui.laytpl;
+
+        $.ajax({
+            type: "post",
+            url: getHost() + "/get_religion_pk",
+            beforeSend: function (request) {
+                request.setRequestHeader("token", getCookie("token"));
+            }, success: function (data) {
+                var data = JSON.parse(data)
+                if (data.code === 0) {
+                    //渲染模版
+                    var getTpl = optionTpl.innerHTML
+                        , view = document.getElementById('selectview');
+                    console.log(data)
+                    laytpl(getTpl).render(data, function (html) {
+                        view.innerHTML = html;
+                    });
+                    form.render();
+                } else if ((data.code === 5) && (window.top !== window)) {
+                    window.top.location = window.location.href = 'login/login.html'
+                } else {
+                    layer.msg(data.msg)
+                }
+            }
+        }).error(function (data) {
+            layer.msg('请检查网络后重试');
+        });
+
+        //日期
+        laydate.render({
+            elem: '#date'
+        });
+        laydate.render({
+            elem: '#date1'
+        });
+
+        //创建一个编辑器
+        var editIndex = layedit.build('LAY_demo_editor');
+
+        //自定义验证规则
+        form.verify({
+            title: function (value) {
+                if (value.length < 5) {
+                    return '标题至少得5个字符啊';
+                }
+            }
+            , pass: [
+                /^[\S]{6,12}$/
+                , '密码必须6到12位，且不能出现空格'
+            ]
+            , content: function (value) {
+                layedit.sync(editIndex);
+            }
+        });
+
+        //监听指定开关
+        form.on('switch(switchTest)', function (data) {
+            layer.msg('开关checked：' + (this.checked ? 'true' : 'false'), {
+                offset: '6px'
+            });
+            layer.tips('温馨提示：请注意开关状态的文字可以随意定义，而不仅仅是ON|OFF', data.othis)
+        });
+
+        //监听提交
+        form.on('submit(demo1)', function (data) {
+            $.ajax({
+                type: "post",
+                url: getHost() + "/get_religion_synopsis",
+                data: {
+                    "pk": $("#selectview").val()
+                },
+                beforeSend: function (request) {
+                    request.setRequestHeader("token", getCookie("token"));
+                }, success: function (data) {
+                    var data = JSON.parse(data)
+                    if (data.code === 0) {
+                        //渲染模版
+                        var getTpl = layCardTpl.innerHTML
+                            , view = document.getElementById('layCarView');
+                        console.log(data)
+                        laytpl(getTpl).render(data, function (html) {
+                            view.innerHTML = html;
+                        });
+                        form.render();
+                    } else if ((data.code === 5) && (window.top !== window)) {
+                        window.top.location = window.location.href = 'login/login.html'
+                    } else {
+                        layer.msg(data.msg)
+                    }
+                }
+            }).error(function (data) {
+                layer.msg('请检查网络后重试');
+            });
+
+            return false;
+        });
+
+
+        //表单取值
+        layui.$('#LAY-component-form-getval').on('click', function () {
+            var data = form.val('example');
+            alert(JSON.stringify(data));
+        });
+
+    });
+</script>
+</body>
+</html>

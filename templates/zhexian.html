@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>宗教人口分布</title>
+    <link rel="stylesheet" href="css/font.css">
+    <link rel="stylesheet" href="css/xadmin.css">
+    <script src="js/jquery.min.js"></script>
+    <script src="lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/xadmin.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/echarts.js"></script>
+</head>
+
+<body style="position: relative">
+<div class="x-nav">
+        <span class="layui-breadcrumb">
+            <a><cite>宗教人口分布</cite></a>
+
+        </span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新"><i class="layui-icon"
+                                                                        style="line-height:30px">ဂ</i></a>
+
+
+</div>
+<div id="main" style="width: 1200px;height: 500px;margin-top: 20px;padding-left: 2%">
+</div>
+<script>
+    function renderTiaoXing(xData, yData) {
+        var chartDom = document.getElementById('main');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        option = {
+
+            tooltip: {
+                show: true //显示提示框
+            },
+            title: {
+                text: '折线图--单位（百分比）'
+            },
+            xAxis: {
+                type: 'category',
+                data: xData
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [{
+                data: yData,
+                type: 'line'
+            }]
+        };
+
+        option && myChart.setOption(option);
+    }
+
+    $.ajax({
+        type: 'POST',
+        url: getHost() + '/list_zhexian_people',
+        beforeSend: function (request) {
+            request.setRequestHeader("token", getCookie("token"));
+        },
+        success: function (data) {
+            data = JSON.parse(data)
+
+            if (data.code === 0) {
+                renderTiaoXing(data.data.xData, data.data.yData)
+            } else {
+                layer.msg(data.msg)
+            }
+        }
+    }).error(function (data) {
+    });
+</script>
+
+</body>
+
+</html>
